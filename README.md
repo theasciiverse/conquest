@@ -128,8 +128,7 @@ sudo make install
 
 ## Mailing List
 
-There is a low volume mailing list for Conquest.  You can subscribe
-[here](https://radscan.com/cgi-bin/mailman/listinfo/conquest).
+The mailing list at conquest.radscan.com has been closed due to low use and griefers trying to post spam. There's no need for it these days anyway.  I've enabled "Discussions" on github - you can use that if you wish.
 
 ## IRC Channel
 

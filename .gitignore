@@ -7,6 +7,7 @@
 **/.libs/*
 **/.deps/*
 *~
+.vscode/
 Makefile
 src/config.h.in
 config.h
