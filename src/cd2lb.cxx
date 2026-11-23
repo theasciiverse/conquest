@@ -630,7 +630,7 @@ void cdinit(void)
     noecho();
 
     maxcol = ((COLS > 80) ? 80 : COLS);
-    maxlin = LINES;
+    maxlin = ((LINES > 25) ? 25 : LINES); /* 80x25, centred by cdmove */
 
     /* make sure COLS is >= 80, LINES >= 24 */
 
@@ -723,6 +723,32 @@ int cdlins ( void )
 
 }
 
+/* cdorigin - where the 80x25 screen starts on the terminal (Asciiverse) */
+/* description */
+/*    The client is laid out for 80x25; on a bigger terminal that screen */
+/*    sits in the middle. Worked out on every call, so it follows a */
+/*    resize; when it moves, the terminal is cleared once so nothing is */
+/*    left behind at the old place. */
+void cdorigin ( int *lin, int *col )
+{
+    static int lastlin = -1, lastcol = -1;
+    int l = (LINES > 25) ? (LINES - 25) / 2 : 0;
+    int c = (COLS > 80) ? (COLS - 80) / 2 : 0;
+
+    if (l != lastlin || c != lastcol)
+    {
+        if (lastlin != -1)
+        {
+            clear();
+            Context.redraw = true;  /* the display draws its labels again */
+        }
+        lastlin = l;
+        lastcol = c;
+    }
+    *lin = l;
+    *col = c;
+}
+
 /* cdmove - move position of cursor in desired image */
 /* synopsis */
 /*    int lin, col */
@@ -743,8 +769,12 @@ void cdmove ( int lin, int col )
     col = (col > (maxcol - 1)) ? maxcol - 1 : col; /* within screen */
     /* boundries */
 
-    /* do it hard and fast (we hope)*/
-    move(lin, col);
+    /* do it hard and fast (we hope), in the middle of the terminal */
+    {
+        int olin, ocol;
+        cdorigin(&olin, &ocol);
+        move(lin + olin, col + ocol);
+    }
 
     return;
 

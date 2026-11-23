@@ -66,7 +66,11 @@ void do_bottomborder(int snum, char *buf, int attrib, int bufattr)
     /* draw the line */
     uiPutColor(attrib);
     cdline( lin, 1, lin, Context.maxcol );
-    mvaddch(lin - 1, STAT_COLS - 1, ACS_BTEE);
+    {
+        int olin, ocol;
+        cdorigin(&olin, &ocol);
+        mvaddch(lin - 1 + olin, STAT_COLS - 1 + ocol, ACS_BTEE);
+    }
     uiPutColor(0);
 
     /* now the buffer, if there */

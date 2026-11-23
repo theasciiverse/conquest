@@ -252,6 +252,9 @@ reloop:
     {
         utSleep(0.1);
         thechar = wgetch(stdscr);
+        /* a resize redraws the screen, centred again: ^L */
+        if (thechar == KEY_RESIZE)
+            thechar = '\014';
     }
     else
         thechar = ibufGetc();
@@ -420,6 +423,8 @@ static int _iogtimed ( int *ch, real seconds )
 # endif
 
             c = wgetch(stdscr);   /* I hope select wasn't lying... */
+            if (c == KEY_RESIZE)  /* redraw, centred again: ^L */
+                c = '\014';
             *ch = c;
 
 # if defined(DEBUG_IOGTIMED)

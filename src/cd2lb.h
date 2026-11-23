@@ -50,6 +50,7 @@ void cdinit(void);
 void cdline ( int lin1, int col1, int lin2, int col2 );
 int  cdlins( void );
 void cdmove ( int lin, int col );
+void cdorigin ( int *lin, int *col );
 void cdmovtc ( char ibuf[], char obuf[], char trntbl[], int count );
 void cdrefresh ( void );
 void cdput ( char ch, int lin, int col );

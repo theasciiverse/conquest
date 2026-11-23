@@ -1242,7 +1242,11 @@ char mcuGetCX( const char *pmt, int lin, int offset, const char *terms,
     i = (int)( Context.maxcol - strlen( pmt ) ) / (int)2 + offset;
     if ( i <= 0 )
         i = 1;
-    move(lin, 0);
+    {
+        int olin, ocol;
+        cdorigin(&olin, &ocol);
+        move(lin + olin, ocol);
+    }
     clrtoeol();
     buf[0] = 0;
     return ( cdgetx( pmt, lin, i, terms, buf, len, true ) );
