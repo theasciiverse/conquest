@@ -49,3 +49,8 @@ cscope.out
 
 TAGS
 
+
+# Asciiverse build output
+/av-build/
+/stage/
+/dist/

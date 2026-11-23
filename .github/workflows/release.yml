@@ -1,0 +1,131 @@
+# Builds Conquest for the Asciiverse catalog.
+#
+# For av: one archive per target, named conquest-<target>.tar.gz, plus a
+# SHA256SUMS file, attached to a GitHub release (hub/catalog/SCHEMA.md,
+# release.source = "github").  Each archive holds the menu (conquest),
+# the curses client (conquest-tty), the server and its helpers
+# (conquestd, conqdriv, conqoper), the universe (conqinitrc), the
+# player's guide, the licence, README.md and PATCHES.md.
+#
+# Tags look like v9.1a-av.1: upstream's version, then our packaging
+# release.  Linux builds on the oldest runners with ncurses, libcrypt
+# and the C++ runtime linked in, so only libc is needed (glibc 2.35 and
+# newer).  macOS builds natively on a runner of each architecture.
+# No Windows build: the server is a Unix program (asciiverse/README.md,
+# PATCHES.md).
+
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "existing tag to build and release"
+        required: true
+
+env:
+  ID: conquest
+  TAG: ${{ inputs.tag || github.ref_name }}
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: x86_64-unknown-linux-gnu, runner: ubuntu-22.04 }
+          - { target: aarch64-unknown-linux-gnu, runner: ubuntu-22.04-arm }
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - name: Build
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q autoconf automake libtool bison flex libncurses-dev libcrypt-dev
+          sh asciiverse/build.sh
+          file av-build/bin/*
+          for f in av-build/bin/*; do ldd "$f"; done
+
+      - name: Smoke test (a private universe in a temporary state folder)
+        run: |
+          export TERM=xterm-256color XDG_STATE_HOME="$RUNNER_TEMP/state"
+          sh asciiverse/stage.sh
+          script -qec "stty cols 100 rows 30; timeout 15 stage/conquest -play" /dev/null >/dev/null || true
+          cat "$XDG_STATE_HOME/conquest/conquest-menu.log"
+          grep -q "CONNECT: client localhost SUCCESS" "$XDG_STATE_HOME/conquest/var/conquest.log"
+          grep -q "SERVER ID: Asciiverse Conquest" "$XDG_STATE_HOME/conquest/user/conquest.log"
+
+      - name: Package
+        run: |
+          sh asciiverse/stage.sh
+          mkdir -p dist
+          tar --owner=0 --group=0 --numeric-owner -czf "dist/$ID-${{ matrix.target }}.tar.gz" -C stage .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: dist/*
+
+  macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: aarch64-apple-darwin, runner: macos-15 }
+          - { target: x86_64-apple-darwin, runner: macos-15-intel }
+    runs-on: ${{ matrix.runner }}
+    env:
+      MACOSX_DEPLOYMENT_TARGET: "11.0"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - name: Build
+        run: |
+          brew install autoconf automake libtool bison
+          export PATH="$(brew --prefix bison)/bin:$PATH" LIBTOOLIZE=glibtoolize
+          sh asciiverse/build.sh
+          file av-build/bin/*
+          for f in av-build/bin/*; do otool -L "$f"; done
+
+      - name: Package
+        run: |
+          sh asciiverse/stage.sh
+          mkdir -p dist
+          tar -czf "dist/$ID-${{ matrix.target }}.tar.gz" -C stage .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: dist/*
+
+  release:
+    needs: [linux, macos]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Checksums
+        working-directory: dist
+        run: sha256sum * > SHA256SUMS && cat SHA256SUMS
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
+            || gh release create "$TAG" -R "$GITHUB_REPOSITORY" --title "Conquest $TAG" \
+                 --notes "Conquest ${TAG%%-av.*}, real-time space war since 1983, with its terminal client brought forward to today's servers and a menu to play alone against robots, host on the local network or join a friend. See PATCHES.md."
+          gh release upload "$TAG" dist/* -R "$GITHUB_REPOSITORY" --clobber
