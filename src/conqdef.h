@@ -111,7 +111,7 @@ typedef enum {
     KB_CONQUER        = 5,   /* you conquered the universe */
     KB_NEWGAME        = 6,   /* new game */
     KB_EVICT          = 7,   /* game closed for repairs */
-    KB_SHIT           = 8,   /* placed on shit list */
+    KB_SHIT           = 8,   /* banned by an operator */
     KB_DOOMSDAY       = 9,   /* the planet eater got you */
     KB_GOTDOOMSDAY    = 10,  /* you got the planet eater */
     KB_GOD            = 11,  /* killed by the Lord */

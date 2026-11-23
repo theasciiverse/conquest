@@ -142,7 +142,7 @@ void utAppendKilledBy(std::string& buf, killedBy_t kb, uint16_t detail)
         buf += "evict";
         break;
     case KB_SHIT:
-        buf += "shit";
+        buf += "banned";
         break;
     case KB_DOOMSDAY:
         buf += "doomsday";

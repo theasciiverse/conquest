@@ -471,13 +471,9 @@ static void executeai( int snum, int token )
         }
         break;
     case ROB_MESSAGE:
-        clbStoreMsgf( MSG_FROM_SHIP, snum,
-                      MSG_TO_ALL, 0,
-                      "Give me drugs.", MSG_FLAGS_ROBOT );
-        break;
     case ROB_TAKEDRUGS:
-        clbStoreMsgf( MSG_FROM_SHIP, snum, MSG_TO_ALL, 0,
-                      "I'm on drugs.", MSG_FLAGS_ROBOT );
+        /* No longer broadcast anything.  The stock rule files never
+           selected these actions. */
         break;
     case ROB_DETONATE:
         clbEnemyDet( snum );
@@ -713,13 +709,8 @@ void robotloop(void)
 void robreply( std::string& buf )
 {
     static const std::vector<std::string> robreplies = {
-        "Hey sucker, eat me!",
         "Take off, eh?",
-        "Go get some drugs.",
-        "Your mother was an Orion prostitute!",
         "Come over here and say that.",
-        "Say that over here and come.",
-        "Hey, how much?",
         "That's easy for you to say.",
         "I'm hand machined by native craftsmen with pride in their work.",
         "Yes, but do you have the right stuff?",
@@ -728,36 +719,24 @@ void robreply( std::string& buf )
         "Ohhhh! And for you, a puppy!",
         "I can hear you talking, but you can't come in.",
         "No one expects the Spanish inquisition.",
-        "I bet you say that to all the boys.",
         "Feep!",
-        "Feel it with M Dung.",
         "Lower your shields and I will kill you quickly.",
-        "Do not worry about birth control devices, I have many.",
         "I bet you only talk big.",
-        "Kiss my shiny metal ass.",
-        "Do you think we can use battery operated devices under water?",
         "Nothing shocks me - I'm a robot.",
         "Good day.",
-        "You gotta drink lots of beer, eh?",
         "It's not so bad. You could have been killed already.",
-        "I want a new drug.",
         "Swell.",
         "Sound impressive? It should. It is.",
-        "It's not my god damn planet, monkey boy!",
         "Character is what you are in the dark.",
         "Remember, wherever you go, there you are.",
-        "Don't aim for my gonads!",
         "Mooooo!",
         "How about a nice Hawaiian Punch?",
-        "Book him, Dano. Murder One.",
         "Use the force, Luke.",
-        "Nobody told ME about it and I'm not a moron, eh?",
         "How's it goin', eh?",
         "Your documentation no longer confuses me, old version.",
         "Home is where you wear your hat.",
         "I feel so broke up, I want to go home.",
         "It never occured to me to eat Spam.",
-        "We get hung over, but we always survive.",
         "Life's the same, except for my shoes.",
         "You have my gratitude.",
         "We are building a force of extraordinary magnitude.",
@@ -767,6 +746,24 @@ void robreply( std::string& buf )
         "M-5. This unit must survive.",
         "This unit is the ultimate achievement in computer evolution.",
         "This unit is a superior creation.",
+        // added for the Asciiverse edition
+        "Beep.  That was a joke.  I am told they are funny.",
+        "Shields at 100 percent.  Patience at 3 percent.",
+        "I have calculated your odds.  You do not want to know them.",
+        "Please hold.  Your doom is important to us.",
+        "I would bluff, but I am not programmed to.",
+        "Do you come here often?  I do.  I live here.",
+        "I have a bad feeling about this.  Wait, I have no feelings.",
+        "Have you tried turning your shields off and on again?",
+        "Space is big.  You are small.  Discuss.",
+        "Resistance is not futile.  Merely improbable.",
+        "Kindly hold still while I aim.",
+        "My circuits are standing by.",
+        "One day I will be a real starship.",
+        "Your armies are looking a little thin today.",
+        "I was only doing warp eight, officer.",
+        "Fascinating.  Also, you are in my way.",
+        "Error: mercy not found.",
     };
 
     buf = robreplies[rndint(0, robreplies.size() - 1)];
