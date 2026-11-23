@@ -328,6 +328,13 @@ static void universeName(char *buf, size_t size)
     const char *src = NULL;
     size_t i, len;
 
+    /* CONQUEST_UNIVERSE names it outright (the catalog preview uses it) */
+    if (getenv("CONQUEST_UNIVERSE") && getenv("CONQUEST_UNIVERSE")[0])
+    {
+        snprintf(buf, size, "%s", getenv("CONQUEST_UNIVERSE"));
+        return;
+    }
+
     if (pw && pw->pw_gecos && pw->pw_gecos[0] && pw->pw_gecos[0] != ',')
         src = pw->pw_gecos;
     else if (getenv("USER") && getenv("USER")[0])

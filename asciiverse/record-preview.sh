@@ -17,6 +17,7 @@ rm -f "$out"
 tmux new-session -d -s "$session" -x 100 -y 30 \
   "cd '$root/stage' && env -i PATH='$root/stage:/usr/bin:/bin:/snap/bin' HOME='$tmp/home' \
      XDG_STATE_HOME='$tmp/state' USER=player LOGNAME=player \
+     CONQUEST_UNIVERSE=\"Player's Universe\" \
      TERM=xterm-256color COLORTERM=truecolor LANG=C.UTF-8 \
      asciinema rec --quiet --window-size 100x30 --idle-time-limit 2 \
        --capture-env TERM,COLORTERM,LANG --title Conquest \

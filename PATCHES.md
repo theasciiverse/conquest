@@ -120,6 +120,8 @@ upstream:
     the first name in the account's full name, else the login name;
     friends joining a hosted game see it on the welcome screen.
     Universes made before, named "Asciiverse Conquest", are renamed.
+    `CONQUEST_UNIVERSE` names it outright (the catalog preview is
+    "Player's Universe").
 - **State folder**: everything lives in `$XDG_STATE_HOME/conquest`
   (`~/.local/state/conquest`): `etc/` (the server's `conquest.conf`
   and a copy of `conqinitrc`), `var/` (the universe `conquest.cb`, the
