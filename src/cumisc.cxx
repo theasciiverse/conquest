@@ -221,7 +221,13 @@ int mcuReadMsg( int msgnum, int dsplin )
 }
 
 /*  planlist - list planets */
-void mcuPlanetList()
+/*  planlist - list planets */
+/*  SYNOPSIS */
+/*    int team, snum */
+/*    mcuPlanetList( team, snum ) */
+/* team is Team::NoTeam for the operator's view (everything known),
+ * otherwise only what that team has scanned is shown */
+void mcuPlanetList( int team, int snum )
 {
     int i, lin, col, olin, pnum;
     int cmd;
@@ -308,8 +314,33 @@ void mcuPlanetList()
                 PlanetIdx++;
                 pnum = sv[i];
 
-                switch(cbPlanets[pnum].type)
-                {
+                if ( snum >= 0 && snum < cbLimits.maxShips() )
+                {               /* a player with a valid ship */
+                    if ( cbPlanets[pnum].team == cbShips[snum].team
+                         && !selfwar(snum) )
+                        outattr = GreenLevelColor;
+                    else if ( (clbSPWar(snum,pnum)
+                               && cbPlanets[pnum].scanned[cbShips[snum].team] )
+                              || cbPlanets[pnum].type == PlanetType::Sun )
+                        outattr = RedLevelColor;
+                    else
+                        outattr = YellowLevelColor;
+                }
+                else if ( team >= 0 && team < NUM_PLAYERTEAMS )
+                {               /* a player in the menu */
+                    if ( cbPlanets[pnum].team == cbUsers[Context.unum].team
+                         && !(cbUsers[Context.unum].war[cbUsers[Context.unum].team]))
+                        outattr = GreenLevelColor;
+                    else if ( cbPlanets[pnum].type == PlanetType::Sun
+                              || (cbPlanets[pnum].team < NUM_PLAYERTEAMS
+                                  && cbUsers[Context.unum].war[cbPlanets[pnum].team]
+                                  && cbPlanets[pnum].scanned[cbUsers[Context.unum].team]) )
+                        outattr = RedLevelColor;
+                    else
+                        outattr = YellowLevelColor;
+                }
+                else switch(cbPlanets[pnum].type)
+                {               /* conqoper */
                     case PlanetType::Sun:
                         outattr = RedLevelColor;
                         break;
@@ -336,15 +367,30 @@ void mcuPlanetList()
                 ch =  cbTeams[cbPlanets[pnum].team].teamchar;
                 sprintf( junk, "%d", cbPlanets[pnum].armies );
 
+                /* Then modify based on scan information. */
+                if ( team >= 0 && team < NUM_PLAYERTEAMS
+                     && ! cbPlanets[pnum].scanned[team] )
+                {
+                    ch = '?';
+                    strcpy(junk , "?") ;
+                }
+
                 /* Suns and moons are displayed as unowned. */
                 if ( cbPlanets[pnum].type == PlanetType::Sun
                      || cbPlanets[pnum].type == PlanetType::Moon )
                     ch = ' ';
 
+                /* Don't display armies for suns unless we're special. */
+                if ( cbPlanets[pnum].type == PlanetType::Sun
+                     && team >= 0 && team < NUM_PLAYERTEAMS )
+                    junk[0] = 0;
+
                 /* Moons aren't supposed to have armies. */
                 if ( cbPlanets[pnum].type == PlanetType::Moon )
 		{
-                    if ( cbPlanets[pnum].armies == 0 )
+                    if ( team >= 0 && team < NUM_PLAYERTEAMS )
+                        junk[0] = 0;
+                    else if ( cbPlanets[pnum].armies == 0 )
                         junk[0] = 0;
 		}
 
@@ -442,7 +488,7 @@ void mcuPlanetList()
 
 
 /*  playlist - list ships */
-void mcuPlayList( bool doall )
+void mcuPlayList( bool godlike, bool doall, int snum )
 {
     std::string cbuf;
 
@@ -454,7 +500,7 @@ void mcuPlayList( bool doall )
     cdclear();
     uiPutColor(LabelColor);  /* dwp */
 
-    clbShipline(SHIPLINE_HDR_OPER, true, cbuf);
+    clbShipline((godlike) ? SHIPLINE_HDR_OPER : SHIPLINE_HDR, godlike, cbuf);
 
     col = (int)(Context.maxcol - cbuf.size() ) / (int)2;
     lin = 2;
@@ -473,6 +519,9 @@ void mcuPlayList( bool doall )
 
     while(true)
     {
+        if ( ! godlike && ! clbStillAlive( Context.snum ) )
+            break;
+
         int i = fship;
         cdclrl( fline, lline - fline + 1 );
         lin = fline;
@@ -487,7 +536,7 @@ void mcuPlayList( bool doall )
             if ( status == SS_LIVE ||
                  ( doall && ( status != SS_OFF || kb != KB_NONE ) ) )
 	    {
-                clbShipline(i, true, cbuf);
+                clbShipline(i, godlike, cbuf);
 
                 if ( doall && kb != KB_NONE )
 		{
@@ -495,7 +544,28 @@ void mcuPlayList( bool doall )
                     utAppendKilledBy(cbuf, kb, detail) ;
 		}
 
-                uiPutColor(YellowLevelColor);
+                if (snum >= 0 && snum < cbLimits.maxShips() )
+                {		/* a normal ship view */
+		    if ( i == snum )    /* it's ours */
+                        uiPutColor(CQC_A_BOLD);
+		    else if (satwar(i, snum)) /* we're at war with it */
+                        uiPutColor(RedLevelColor);
+		    else if (cbShips[i].team == cbShips[snum].team && !selfwar(snum))
+                        uiPutColor(GreenLevelColor); /* it's a team ship */
+		    else
+                        uiPutColor(YellowLevelColor);
+                }
+		else if (godlike) /* conqoper */
+		    uiPutColor(YellowLevelColor);
+		else
+                { /* not conqoper, and not a valid ship (main menu) */
+		    if (cbUsers[Context.unum].war[cbShips[i].team])
+                        uiPutColor(RedLevelColor);
+		    else if (cbUsers[Context.unum].team == cbShips[i].team)
+                        uiPutColor(GreenLevelColor); /* it's a team ship */
+		    else
+                        uiPutColor(YellowLevelColor);
+                }
 
                 cdputs( cbuf.c_str(), lin, col );
                 uiPutColor(0);
@@ -552,7 +622,7 @@ void mcuPlayList( bool doall )
 /*    int flag, review */
 /*    int snum, slm */
 /*    flag = mcuReviewMsgs( snum, slm ) */
-int mcuReviewMsgs( int slm )
+int mcuReviewMsgs( int snum, int slm )
 {
     int ch, Done, msg, tmsg, lastone;
     int didany;
@@ -561,13 +631,22 @@ int mcuReviewMsgs( int slm )
     Done = false;
 
     lastone = mod( cbConqInfo->lastmsg+1, cbLimits.maxMsgs() );
+    if ( snum >= 0 && snum < cbLimits.maxShips() )
+    {
+        if ( cbShips[snum].lastmsg == LMSG_NEEDINIT )
+            return ( false );				/* none to read */
+        int i = cbShips[snum].alastmsg;
+        if ( i != LMSG_READALL )
+            lastone = i;
+    }
+
     cdclrl( MSG_LIN1, 1 );
 
     msg = slm;
 
     do
     {
-        if ( clbCanRead( -1, msg ))
+        if ( clbCanRead( snum, msg ))
 	{
             mcuReadMsg( msg, MSG_LIN1 );
             didany = true;
@@ -584,7 +663,7 @@ int mcuReviewMsgs( int slm )
                 tmsg = msg - 1;
                 if (tmsg < 0)
                     tmsg = cbLimits.maxMsgs() - 1;
-                while(!clbCanRead( -1, tmsg ) && tmsg != lastone)
+                while(!clbCanRead( snum, tmsg ) && tmsg != lastone)
 		{
                     tmsg--;
                     if (tmsg < 0)
@@ -602,7 +681,7 @@ int mcuReviewMsgs( int slm )
 	    case KEY_DOWN:
 	    case KEY_RIGHT:
                 tmsg =  mod( msg + 1, cbLimits.maxMsgs() );
-                while(!clbCanRead( -1, tmsg ) && tmsg != slm + 1 )
+                while(!clbCanRead( snum, tmsg ) && tmsg != slm + 1 )
 		{
                     tmsg = mod( tmsg + 1, cbLimits.maxMsgs() );
 		}
@@ -641,8 +720,11 @@ int mcuReviewMsgs( int slm )
 /*  SYNOPSIS */
 /*    int team */
 /*    mcuTeamList( team ) */
-void mcuTeamList()
+void mcuTeamList( int team )
 {
+    /* team outside the player teams is the operator's view */
+    bool godlike = ( team < 0 || team >= NUM_PLAYERTEAMS );
+
     int i, j, lin, col = 0, ctime, etime;
     char buf[MAX_MSGLINE_LENGTH], timbuf[5][MAX_DATESIZE];
     real x[5];
@@ -860,6 +942,15 @@ void mcuTeamList()
         else
             sprintf( timbuf[i], "%d", cbTeams[i].couptime );
 
+    if ( ! godlike )
+    {
+        for ( i = 0; i < 4; i++ )
+            if ( team != i )
+                strcpy(timbuf[i] , "-") ;
+            else if ( ! TEAM_COUPINFO(i) && timbuf[i][0] != 0 )
+                strcpy(timbuf[i] , "?") ;
+    }
+
     timbuf[4][0] = 0;
 
     lin++;
@@ -873,10 +964,49 @@ void mcuTeamList()
 }
 
 
+/* pick the color for a user in the user lists: bold for yourself, red
+ * at war, green your team, yellow otherwise (and for the operator) */
+static void _userColor( int unum, bool godlike, int snum )
+{
+    int me;
+
+    if ( snum >= 0 && snum < cbLimits.maxShips() ) /* we're a valid ship */
+        me = cbShips[snum].unum;
+    else if ( ! godlike )
+        me = Context.unum;          /* in the menu */
+    else
+    {
+        uiPutColor(YellowLevelColor); /* conqoper: bland view */
+        return;
+    }
+
+    if ( me < 0 || me >= cbLimits.maxUsers() )
+        uiPutColor(YellowLevelColor);
+    else if ( unum == me )
+        uiPutColor(CQC_A_BOLD);      /* it's ours */
+    else if ( snum >= 0 && snum < cbLimits.maxShips() )
+    {
+        if (cbShips[snum].war[cbUsers[unum].team]) /* we're at war with it */
+            uiPutColor(RedLevelColor);
+        else if (cbShips[snum].team == cbUsers[unum].team && !selfwar(snum))
+            uiPutColor(GreenLevelColor); /* it's a team ship */
+        else
+            uiPutColor(YellowLevelColor);
+    }
+    else if (cbUsers[me].war[cbUsers[unum].team]) /* at war (maybe selfwar) */
+        uiPutColor(RedLevelColor);
+    else if (cbUsers[me].team == cbUsers[unum].team) /* team ship */
+        uiPutColor(GreenLevelColor);
+    else
+        uiPutColor(YellowLevelColor);
+
+    return;
+}
+
 /*  userlist - display the user list */
 /*  SYNOPSIS */
 /*    mcuUserList( godlike ) */
-void mcuUserList()
+void mcuUserList( bool godlike, int snum )
 {
     int i, j, unum, fuser, fline, lline, lin;
     std::vector<int> uvec;
@@ -921,9 +1051,9 @@ void mcuUserList()
         lin = fline;
         while ( i < uvec.size() && lin <= lline )
 	{
-            clbUserline( uvec[i], -1, cbuf, true, false );
+            clbUserline( uvec[i], -1, cbuf, godlike, false );
 
-            uiPutColor(YellowLevelColor); /* bland view */
+            _userColor( uvec[i], godlike, snum );
 
             cdputs( cbuf.c_str(), lin, 1 );
             uiPutColor(0);
@@ -968,7 +1098,7 @@ void mcuUserList()
 /*  userstats - display the user list */
 /*  SYNOPSIS */
 /*    mcuUserStats( godlike, snum ) */
-void mcuUserStats()
+void mcuUserStats( bool godlike, int snum )
 {
     int i, j, unum, fuser, fline, lline, lin;
     std::vector<int> uvec;
@@ -1023,7 +1153,7 @@ void mcuUserStats()
             clbStatline( uvec[i], cbuf );
 
             /* determine color */
-            uiPutColor(YellowLevelColor); /* bland view */
+            _userColor( uvec[i], godlike, snum );
 
             cdputs( cbuf.c_str(), lin, 1 );
             uiPutColor(0);
@@ -1182,4 +1312,124 @@ void mcuPutPrompt( const char *pmt, int line )
 int uiUpdatePlanet(int pnum)
 {
     return true;                  /* NOOP */
+}
+
+/* display the conquest logo. returns last line number following */
+int mcuConqLogo(void)
+{
+    int col, lin, lenc1;
+    static const char *c1=" CCC    OOO   N   N   QQQ   U   U  EEEEE   SSSS  TTTTT";
+    static const char *c2="C   C  O   O  NN  N  Q   Q  U   U  E      S        T";
+    static const char *c3="C      O   O  N N N  Q   Q  U   U  EEE     SSS     T";
+    static const char *c4="C   C  O   O  N  NN  Q  Q   U   U  E          S    T";
+    static const char *c5=" CCC    OOO   N   N   QQ Q   UUU   EEEEE  SSSS     T";
+
+    /* First clear the display. */
+    cdclear();
+
+    /* Display the logo. */
+    lenc1 = strlen( c1 );
+    col = (Context.maxcol-lenc1) / 2;
+    lin = 2;
+    cprintf( lin,col,ALIGN_NONE,"#%d#%s", RedColor | CQC_A_BOLD, c1);
+    lin++;
+    cprintf( lin,col,ALIGN_NONE,"#%d#%s", RedColor | CQC_A_BOLD, c2);
+    lin++;
+    cprintf( lin,col,ALIGN_NONE,"#%d#%s", RedColor | CQC_A_BOLD, c3);
+    lin++;
+    cprintf( lin,col,ALIGN_NONE,"#%d#%s", RedColor | CQC_A_BOLD, c4);
+    lin++;
+    cprintf( lin,col,ALIGN_NONE,"#%d#%s", RedColor | CQC_A_BOLD, c5);
+
+    /* Draw a box around the logo. */
+    lin++;
+    uiPutColor(CQC_A_BOLD);
+    cdbox( 1, col-2, lin, col+lenc1+1 );
+    uiPutColor(0);
+
+    lin++;
+
+    return lin;
+}
+
+/* convert a KP key into an angle */
+bool mcuKPAngle(int ch, real *angle)
+{
+    bool rv = true;
+
+    switch (ch)
+    {
+    case KEY_HOME:
+    case KEY_A1:		/* KP upper left */
+        *angle = 135.0;
+        break;
+    case KEY_PPAGE:
+    case KEY_A3:		/* KP upper right */
+        *angle = 45.0;
+        break;
+    case KEY_END:
+    case KEY_C1:		/* KP lower left */
+        *angle = 225.0;
+        break;
+    case KEY_NPAGE:
+    case KEY_C3:		/* KP lower right */
+        *angle = 315.0;
+        break;
+    case KEY_UP:		/* up arrow */
+        *angle = 90.0;
+        break;
+    case KEY_DOWN:		/* down arrow */
+        *angle = 270.0;
+        break;
+    case KEY_LEFT:		/* left arrow */
+        *angle = 180.0;
+        break;
+    case KEY_RIGHT:		/* right arrow */
+        *angle = 0.0;
+        break;
+    default:
+        rv = false;
+        break;
+    }
+
+    return(rv);
+}
+
+/*  gettarget - get a target angle from the user */
+/*  SYNOPSIS */
+/*    char pmt() */
+/*    int lin, col */
+/*    real dir */
+/*    int flag, gettarget */
+/*    flag = mcuGetTarget( pmt, lin, col, dir, cdefault ) */
+bool mcuGetTarget( const char *pmt, int lin, int col, real *dir, real cdefault )
+{
+    int j;
+    char ch, buf[MAX_MSGLINE_LENGTH];
+
+    cdclrl( lin, 1 );
+    buf[0] = 0;
+    ch = (char)cdgetx( pmt, lin, col, TERMS, buf, MAX_MSGLINE_LENGTH, true );
+    if ( ch == TERM_ABORT )
+        return ( false );
+
+    utDeleteBlanks( buf );
+    if ( buf[0] == 0 )
+    {
+        /* Default. */
+        *dir = cdefault;
+        return ( true );
+    }
+    if (utIsDigits(buf))
+    {
+        if ( ! utSafeCToI( &j, buf, 0 ) )
+            return ( false );
+        *dir = utMod360( (real) j );
+        return ( true );
+    }
+    if ( utArrowsToDir( buf, dir ) )
+        return ( true );
+
+    return ( false );
+
 }

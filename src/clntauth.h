@@ -34,5 +34,6 @@
 #include "protocol.h"
 
 void ChangePassword(int unum, int isoper);
+bool Logon(char *username);
 
 #endif /* CLNTAUTH_H_INCLUDED */

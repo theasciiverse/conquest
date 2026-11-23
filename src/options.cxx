@@ -153,6 +153,96 @@ static void ChangeOption(struct Conf *cdata, int lin)
 
 
 /*************************************************************************
+ * UserOptsMenu() - display user options menu (curses client)
+ *
+ *
+ *************************************************************************/
+
+void UserOptsMenu(int unum)
+{
+    static const char *header = "User Options Menu";
+    static const char *mopts[] = {
+        "View/Edit Options",
+        "Change Password"
+    };
+    const int numoptions = 2;	/* don't exceed 9 - one char input is used */
+    static const char *prompt = "Enter a number to select an item, any other key to quit.";
+    int lin = 0, col = 0;
+    int i;
+    int ch;
+    bool done = false;
+
+    while (!done)
+    {
+        /* First clear the display. */
+        cdclear();
+        lin = 1;
+        col = ((Context.maxcol / 2) - (strlen(header) / 2));
+
+        cprintf(lin, col, ALIGN_NONE, "#%d#%s", NoColor, header);
+
+        lin += 3;
+        col = 5;
+
+        for (i = 0; i < numoptions; i++)
+	{
+            cprintf(lin, col, ALIGN_NONE, "#%d#%d.#%d# %s#%d#", InfoColor,
+                    i + 1, LabelColor, mopts[i], NoColor);
+            lin++;
+	}
+
+        lin = 17;
+        cprintf(lin, col, ALIGN_NONE, "#%d#Server Name:    #%d#%s#%d#",
+                LabelColor,
+                InfoColor, sHello.servername,
+                NoColor);
+        lin++;
+        cprintf(lin, col, ALIGN_NONE, "#%d#Server Version: #%d#%s#%d#",
+                LabelColor,
+                InfoColor, sHello.serverver,
+                NoColor);
+        lin++;
+        cprintf(lin, col, ALIGN_NONE, "#%d#UDP:            #%d#%s#%d#",
+                LabelColor,
+                InfoColor, (cInfo.doUDP) ? "On" : "Off",
+                NoColor);
+
+        cdclrl( MSG_LIN1, 2  );
+        cdputs(prompt, MSG_LIN1, 1);
+
+        /* Get a char */
+        ch = iogchar();
+
+        switch(ch)
+	{
+	case '1':			/* user opts */
+            ChangedSomething = false;
+            ViewEditOptions(ConfData, CfEnd, true);
+            /* save and reload the config */
+            if (ChangedSomething == true)
+	    {
+                SaveUserConfig();
+                /* set new update rate */
+                Context.updsec = UserConf.UpdatesPerSecond;
+                sendCommand(CPCMD_SETRATE, Context.updsec);
+	    }
+            break;
+
+	case '2':			/* chg passwd */
+            ChangePassword(unum, false);
+            break;
+
+	default:
+            done = true;
+            break;
+	}
+    }
+
+    return;
+}
+
+
+/*************************************************************************
  * ViewEditOptions() - View or edit an options array
  *
  *

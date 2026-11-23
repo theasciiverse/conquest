@@ -1372,7 +1372,7 @@ void operate(void)
             kiss(0,true);
             break;
 	case 'L':
-            mcuReviewMsgs( cbConqInfo->glastmsg );
+            mcuReviewMsgs( -1 /*god*/, cbConqInfo->glastmsg );
             break;
 	case 'm':
             cucSendMsg( MSG_FROM_GOD, 0, true, false );
@@ -1401,7 +1401,7 @@ void operate(void)
             redraw = true;
             break;
 	case 'S':
-            mcuUserStats();
+            mcuUserStats( true, -1 );
             redraw = true;
             break;
 	case 'T':
@@ -1409,7 +1409,7 @@ void operate(void)
             redraw = true;
             break;
 	case 'U':
-            mcuUserList();
+            mcuUserList( true, -1 );
             redraw = true;
             break;
 	case 'w':
@@ -1418,11 +1418,11 @@ void operate(void)
             redraw = true;
             break;
 	case '/':
-            mcuPlayList( false );
+            mcuPlayList( true, false, -1 );
             redraw = true;
             break;
 	case '\\':
-            mcuPlayList( true );
+            mcuPlayList( true, true, -1 );
             redraw = true;
             break;
 	case '?':
@@ -2058,7 +2058,7 @@ void oppedit(void)
 /*    opplanlist */
 void opPlanetList(void)
 {
-    mcuPlanetList( );
+    mcuPlanetList( Team::NoTeam, -1 );		/* we get extra info */
 }
 
 
@@ -2380,7 +2380,7 @@ void opTeamList(void)
     cdclear();
     do /* repeat*/
     {
-        mcuTeamList();
+        mcuTeamList( -1 );
         mcuPutPrompt( MTXT_DONE, MSG_LIN2 );
         cdrefresh();
     }
@@ -3062,7 +3062,7 @@ void watch(void)
                 oprobot();
                 break;
             case 'L':
-                mcuReviewMsgs( cbConqInfo->glastmsg );
+                mcuReviewMsgs( -1 /*god*/, cbConqInfo->glastmsg );
                 break;
             case 0x0c:
                 operStopTimer();
@@ -3136,13 +3136,13 @@ void watch(void)
                 break;
             case '/':                /* ship list - dwp */
                 operStopTimer();
-                mcuPlayList( false );
+                mcuPlayList( true, false, -1 );
                 Context.redraw = true;
                 operSetTimer();
                 break;
             case '\\':               /* big ship list - dwp */
                 operStopTimer();
-                mcuPlayList( true );
+                mcuPlayList( true, true, -1 );
                 Context.redraw = true;
                 operSetTimer();
                 break;

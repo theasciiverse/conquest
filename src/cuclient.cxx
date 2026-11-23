@@ -44,6 +44,7 @@
 #include "record.h"
 #include "disputil.h"
 #include "ui.h"
+#include "serverflags.h"
 
 void cucPseudo( int unum, int snum )
 {
@@ -299,6 +300,105 @@ void cucSendMsg( msgFrom_t from, uint16_t fromDetail, int terse, int remote )
             }
         }
     } /* end while loop */
+    cdclrl( MSG_LIN1, 2 );
+
+    return;
+
+}
+
+/*  dowar - declare war or peace */
+/*  SYNOPSIS */
+/*    int snum */
+/*    cucDoWar( snum ) */
+void cucDoWar( int snum )
+{
+    int i;
+    uint64_t entertime, now;
+    uint16_t war;
+    int twar[NUM_PLAYERTEAMS], dowait;
+    int ch;
+
+    for ( i = 0; i < NUM_PLAYERTEAMS; i = i + 1 )
+        twar[i] = cbShips[snum].war[i];
+
+    cdclrl( MSG_LIN1, 2 );
+
+    while ( clbStillAlive( Context.snum ) )
+    {
+        cdclrl( MSG_LIN1, 1 );
+        cdputs(clbWarPrompt(Context.snum, twar).c_str(), MSG_LIN1, 1);
+
+        cdrefresh();
+        if ( iogtimed( &ch, 1.0 ) == false )
+	{
+            continue; /* next; */
+	}
+
+        ch = (char)tolower( ch );
+        if ( ch == TERM_ABORT || ch == TERM_NORMAL )
+            break;
+        if ( ch == TERM_EXTRA )
+	{
+            /* Now update the war settings. */
+            dowait = false;
+            war = 0;
+            for ( i = 0; i < NUM_PLAYERTEAMS; i = i + 1 )
+	    {
+                if ( twar[i] && ! cbShips[snum].war[i] )
+                    dowait = true;
+
+                if (twar[i])
+                    war |= (1 << i);
+
+                /* we'll let it happen locally as well... */
+                cbUsers[cbShips[snum].unum].war[i] = twar[i];
+                cbShips[snum].war[i] = twar[i];
+	    }
+
+            sendCommand(CPCMD_SETWAR, war);
+
+            /* Only check for computer delay when flying. */
+            if ( cbShips[snum].status != SS_RESERVED && dowait )
+	    {
+                /* We've set war with at least one team, stall a little. */
+                uiPutMsg(
+                    "Reprogramming the battle computer, please stand by...",
+                    MSG_LIN2 );
+                cdrefresh();
+                utGrand( &entertime );
+                while ( utDeltaGrand( entertime, &now ) < REARM_GRAND )
+		{
+                    /* See if we're still alive. */
+                    if ( ! clbStillAlive( Context.snum ) )
+                        return;
+
+                    /* wait, keeping the display going */
+                    iogtimed( &ch, ITER_SECONDS );
+		}
+	    }
+            break;
+	}
+
+        bool found = false;
+        for ( i = 0; i < NUM_PLAYERTEAMS; i = i + 1 )
+            if ( ch == (char)tolower( cbTeams[i].teamchar ) )
+            {
+                if ( (sStat.serverFlags & SERVER_F_NOTEAMWAR)
+                     && i == cbShips[snum].team )
+                    break;      /* not allowed */
+
+                if ( ! twar[i] || ! cbShips[snum].rwar[i] )
+                {
+                    twar[i] = ! twar[i];
+                    found = true;
+                }
+                break;
+            }
+
+        if (!found)
+            cdbeep();
+    }
+
     cdclrl( MSG_LIN1, 2 );
 
     return;

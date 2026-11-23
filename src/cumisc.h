@@ -31,17 +31,21 @@
 void mcuHistList();
 void mcuPutThing( int what, int lin, int col );
 int  mcuReadMsg( int msgnum, int dsplin );
-void mcuPlanetList();
-void mcuPlayList( bool doall );
-int  mcuReviewMsgs( int slm );
-void mcuTeamList();
-void mcuUserList();
-void mcuUserStats();
+void mcuPlanetList( int team, int snum );
+void mcuPlayList( bool godlike, bool doall, int snum );
+int  mcuReviewMsgs( int snum, int slm );
+void mcuTeamList( int team );
+void mcuUserList( bool godlike, int snum );
+void mcuUserStats( bool godlike, int snum );
 bool  mcuConfirm(void);
 int  mcuAskYN(const char *question, int lin, int col);
 char mcuGetCX( const char *pmt, int lin, int offset, const char *terms,
                char *buf, int len );
 int  mcuMore( const char *pmt );
 void mcuPutPrompt( const char *pmt, int line );
+int  mcuConqLogo(void);
+bool mcuKPAngle(int ch, real *angle);
+bool mcuGetTarget( const char *pmt, int lin, int col, real *dir,
+                   real cdefault );
 
 #endif /* _CUMISC_H */
