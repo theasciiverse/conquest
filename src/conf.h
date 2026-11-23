@@ -168,6 +168,9 @@ typedef struct _sysConf {
     /* allow randomized robot strengths */
     int DoRandomRobotKills;
 
+    /* robots to keep flying for each team without human players */
+    int RobotFill;
+
     /* allow vacant ships */
     int AllowVacant;
 
@@ -309,6 +312,23 @@ struct Conf SysConfData[] =
             "#  calculating Team or User statistics.  It just makes them a little",
             "#  tougher... probably not a good idea for new players though ;-)",
             "#  Default: false",
+            NULL
+        }
+    },
+    {
+        false,
+        CTYPE_NUMERIC,
+        "robot_fill=",
+        &SysConf.RobotFill,
+        0, 5,			/* min/max */
+        "Robots to keep flying for teams with no players",
+        {
+            "# The number of robot ships the driver keeps flying for each",
+            "#  team that still owns planets but has no human players in the",
+            "#  game, so that someone playing alone has company.  Robots that",
+            "#  die are replaced after a short while.  0 disables this, and",
+            "#  robots only appear to defend a home system.",
+            "#  Default: 0",
             NULL
         }
     },

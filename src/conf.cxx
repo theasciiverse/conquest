@@ -46,6 +46,7 @@ static void setSysConfDefaults(void)
 {
     SysConf.NoDoomsday = false;
     SysConf.DoRandomRobotKills = false;
+    SysConf.RobotFill = 0;
     SysConf.AllowVacant = false;
     SysConf.AllowSwitchteams = true;
     SysConf.UserExpiredays = DEFAULT_USEREXPIRE;

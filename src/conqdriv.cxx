@@ -57,6 +57,7 @@ typedef std::vector<int> shipVec_t;
 
 void iterdrive( const shipVec_t& ship );
 void secdrive( const shipVec_t& ship );
+static void robotfill(void);
 void mindrive(void);
 void fivemindrive(void);
 void SigTerminate(int sig);
@@ -269,6 +270,7 @@ int main(int argc, char *argv[])
                 }
 
                 secdrive( ship );
+                robotfill();
 
                 /* Update the common block every minute. */
                 if ( mod( cbDriver->drivsecs, MINUTE_SECONDS ) == 0 )
@@ -554,6 +556,59 @@ void iterdrive( const shipVec_t& ship )
 
 }
 
+
+/*  robotfill - keep SysConf.RobotFill robots flying for every team
+ *  that still owns planets but has no human players in the game.
+ *  Checked every ten seconds. */
+static void robotfill(void)
+{
+    static int count = 0;
+    int i, t, unum, snum;
+
+    if (SysConf.RobotFill <= 0)
+        return;
+
+    if (++count < 10)
+        return;
+    count = 0;
+
+    for ( t = 0; t < NUM_PLAYERTEAMS; t++ )
+    {
+        int humans = 0, robots = 0;
+
+        if ( ! TEAM_ENABLED(t) )
+            continue;
+
+        for ( i = 0; i < cbLimits.maxShips(); i++ )
+            if ( cbShips[i].status == SS_LIVE && cbShips[i].team == t )
+            {
+                if ( SROBOT(i) )
+                    robots++;
+                else
+                    humans++;
+            }
+
+        if ( humans > 0 || robots >= SysConf.RobotFill )
+            continue;
+
+        /* find this team's robot user */
+        unum = -1;
+        for ( i = 0; i < cbLimits.maxUsers(); i++ )
+            if ( ULIVE(i) && UROBOT(i) && cbUsers[i].team == t
+                 && !UBANNED(i) )
+            {
+                unum = i;
+                break;
+            }
+
+        if ( unum >= 0 && newrob( &snum, unum ) )
+            utLog("conqdriv: robotfill: %s (%s) is now flying for the %s",
+                  cbUsers[unum].alias, utShipStr(snum).c_str(),
+                  cbTeams[t].name);
+    }
+
+    return;
+}
 
 /*  secdrive - drive the one-second interval items (DOES LOCKING) */
 /*  SYNOPSIS */
