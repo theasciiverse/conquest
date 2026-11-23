@@ -240,10 +240,14 @@ then
 
 dnl Check for SDL, version 2.0.0+
 SDL_VERSION=2.0.0
-AM_PATH_SDL2($SDL_VERSION,
+dnl AM_PATH_SDL2 comes with SDL2's development files (sdl2.m4); without
+dnl them autoreconf would stop here, so go without the sound client
+m4_ifdef([AM_PATH_SDL2],
+[AM_PATH_SDL2($SDL_VERSION,
             LIBS="$LIBS $SDL_LIBS"; CONQ_CFLAGS="$CONQ_CFLAGS -DHAVE_SDL=1",
             SNDCLIENT=""; AC_MSG_WARN([*** SDL version $SDL_VERSION not found!])
-)
+)],
+[SNDCLIENT=""; AC_MSG_WARN([*** sdl2.m4 not found, building without SDL])])
 CONQ_CFLAGS="$CONQ_CFLAGS $SDL_CFLAGS"
 
 dnl Check for SDL_mixer

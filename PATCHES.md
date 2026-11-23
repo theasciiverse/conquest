@@ -101,6 +101,11 @@ upstream:
   size the screen is cleared once and `Context.redraw` set so the
   display draws its labels again, and `KEY_RESIZE` arrives as `^L`, so
   the lobby and the other screens redraw themselves in the new middle.
+- **configure: builds without SDL2's development files.** `AM_PATH_SDL2`
+  comes from SDL2's `sdl2.m4`; on a machine without it `autoreconf`
+  stopped with "possibly undefined macro", even with the sound client
+  off. `configure.ac` now uses it only when it is there and otherwise
+  goes without the sound client.
 
 ## The Asciiverse package
 
