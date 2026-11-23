@@ -92,6 +92,15 @@ upstream:
   `CONQUEST_USERDIR` replaces `~/.conquest`. A universe whose state was
   relocated belongs to the user running it: no `conquest` group,
   setgid binaries or root install, and that user is its operator.
+- **conquest-tty: centred on the terminal, and follows a resize.** The
+  client is laid out for 80x25 and drew it in the top left corner of any
+  bigger terminal. `cdorigin()` in `cd2lb.cxx` works out where that
+  screen sits in the middle, on every call, and `cdmove()` (through
+  which nearly all drawing goes) adds it; the two direct curses calls
+  (`cumisc.cxx`, `display.cxx`) use it too. When the terminal changes
+  size the screen is cleared once and `Context.redraw` set so the
+  display draws its labels again, and `KEY_RESIZE` arrives as `^L`, so
+  the lobby and the other screens redraw themselves in the new middle.
 
 ## The Asciiverse package
 
@@ -107,6 +116,10 @@ upstream:
     remembered.
   - The same as options: `-play`, `-host`, `-join host[:port]`,
     `-port N`.
+  - The universe is named after the player, "David's Universe", from
+    the first name in the account's full name, else the login name;
+    friends joining a hosted game see it on the welcome screen.
+    Universes made before, named "Asciiverse Conquest", are renamed.
 - **State folder**: everything lives in `$XDG_STATE_HOME/conquest`
   (`~/.local/state/conquest`): `etc/` (the server's `conquest.conf`
   and a copy of `conqinitrc`), `var/` (the universe `conquest.cb`, the

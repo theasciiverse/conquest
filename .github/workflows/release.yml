@@ -61,7 +61,7 @@ jobs:
           script -qec "stty cols 100 rows 30; timeout 15 stage/conquest -play" /dev/null >/dev/null || true
           cat "$XDG_STATE_HOME/conquest/conquest-menu.log"
           grep -q "CONNECT: client localhost SUCCESS" "$XDG_STATE_HOME/conquest/var/conquest.log"
-          grep -q "SERVER ID: Asciiverse Conquest" "$XDG_STATE_HOME/conquest/user/conquest.log"
+          grep -q "SERVER ID: .*Universe" "$XDG_STATE_HOME/conquest/user/conquest.log"
 
       - name: Package
         run: |

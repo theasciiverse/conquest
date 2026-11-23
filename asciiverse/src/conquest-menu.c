@@ -42,6 +42,8 @@
 #include <limits.h>
 #include <net/if.h>
 #include <netinet/in.h>
+#include <pwd.h>
+#include <ctype.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -296,6 +298,60 @@ static void setConf(const char *key, const char *value)
     rename(tmp, path);
 }
 
+/* whether conquest.conf sets key to exactly value */
+static int confIs(const char *key, const char *value)
+{
+    char path[PATH_MAX], line[1024], want[1024];
+    FILE *in;
+    int found = 0;
+
+    snprintf(path, sizeof(path), "%s/conquest.conf", etcdir);
+    snprintf(want, sizeof(want), "%s=%s\n", key, value);
+    if (!(in = fopen(path, "r")))
+        return 0;
+    while (!found && fgets(line, sizeof(line), in))
+        found = !strcmp(line, want);
+    fclose(in);
+    return found;
+}
+
+/*
+ * The universe is named after the player, the way a server carries its
+ * owner's name: "David's Universe", from the first name in the account's
+ * full name, else the login name. Friends who join a hosted game see it
+ * in the welcome screen.
+ */
+static void universeName(char *buf, size_t size)
+{
+    struct passwd *pw = getpwuid(getuid());
+    char who[40] = "";
+    const char *src = NULL;
+    size_t i, len;
+
+    if (pw && pw->pw_gecos && pw->pw_gecos[0] && pw->pw_gecos[0] != ',')
+        src = pw->pw_gecos;
+    else if (getenv("USER") && getenv("USER")[0])
+        src = getenv("USER");
+    else if (pw && pw->pw_name)
+        src = pw->pw_name;
+
+    /* the first word only: "David Sandquist,,," gives "David" */
+    for (i = 0; src && src[i] && src[i] != ' ' && src[i] != ','
+             && i < sizeof(who) - 1; i++)
+        who[i] = src[i];
+    who[i] = 0;
+
+    if (!who[0])
+    {
+        snprintf(buf, size, "Your Universe");
+        return;
+    }
+    who[0] = (char)toupper((unsigned char)who[0]);
+    len = strlen(who);
+    snprintf(buf, size, "%s%s Universe", who,
+             who[len - 1] == 's' || who[len - 1] == 'S' ? "'" : "'s");
+}
+
 /* create the universe the first time */
 static int prepareUniverse(void)
 {
@@ -328,9 +384,17 @@ static int prepareUniverse(void)
             logmsg("conqoper -C failed");
             return -1;
         }
-        setConf("server_name", "Asciiverse Conquest");
+        setConf("server_name", "");    /* named just below */
         setConf("server_motd", "Keep your shields up in battle.");
         setConf("server_contact", "");
+    }
+    /* named after the player; universes made before carried the
+       platform's name, and get the player's too */
+    if (confIs("server_name", "") || confIs("server_name", "Asciiverse Conquest"))
+    {
+        char name[70];
+        universeName(name, sizeof(name));
+        setConf("server_name", name);
     }
     /* robots keep you company, one for each team nobody plays */
     setConf("robot_fill", "1");
