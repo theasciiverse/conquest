@@ -24,7 +24,7 @@ IMAGES = $(top_srcdir)/img/*.png $(top_srcdir)/img/*.txf
 SOUNDS = $(top_srcdir)/sound/*.ogg
 
 man6_MANS = $(top_srcdir)/man/conqdriv.man $(top_srcdir)/man/conqmetad.man $(top_srcdir)/man/conqoper.man \
-	$(top_srcdir)/man/conquest.man $(top_srcdir)/man/conquestd.man $(top_srcdir)/man/conqai.man \
+	$(top_srcdir)/man/conquest.man $(top_srcdir)/man/conquest-tty.man $(top_srcdir)/man/conquestd.man $(top_srcdir)/man/conqai.man \
 	$(top_srcdir)/man/conqstrat.man $(top_srcdir)/man/conqinit.man
 
 if ISMINGW
@@ -118,11 +118,11 @@ libexec_PROGRAMS = conqdriv
 
 if GLCLIENT
 
-bin_PROGRAMS = conquest conqoper conqai conqstrat \
+bin_PROGRAMS = conquest conquest-tty conqoper conqai conqstrat \
 	conquestd conqmetad conqinit
 else !GLCLIENT
 
-bin_PROGRAMS = conqoper conqai conqstrat \
+bin_PROGRAMS = conquest-tty conqoper conqai conqstrat \
 	conquestd conqmetad conqinit
 
 endif !GLCLIENT
@@ -146,6 +146,10 @@ conquestd_LDADD = libconqserv.la libconquest.la libconqinit.la fmt/libfmt.la \
 conqai_SOURCES = conqai_main.cxx
 
 conqai_LDADD = libconquest.la libconqinit.la fmt/libfmt.la $(LEXLIB) $(YACCLIB)
+
+conquest_tty_SOURCES = conquesttty.cxx
+conquest_tty_LDADD = libUiCU.la libUi.la libconqclnt.la libconquest.la \
+	libconqinit.la fmt/libfmt.la $(LEXLIB) $(YACCLIB)
 
 conqoper_SOURCES = conqoper.cxx
 conqoper_LDADD = libUiCU.la libUi.la libconqclnt.la libconquest.la \

@@ -1,0 +1,56 @@
+.TH "conquest-tty" 6 "" ""
+.SH NAME
+conquest-tty \- Conquest curses (text terminal) client
+.SH SYNOPSIS
+.PP
+\fBconquest-tty\fP [OPTIONS]...
+.SH DESCRIPTION
+.PP
+\fBconquest-tty\fP is the curses client for Conquest, a multi-player,
+real-time space combat game.  It plays in any text terminal of at
+least 80 columns by 25 lines, including over ssh, and talks to the
+same \fBconquestd\fP(6) servers as the OpenGL client \fBconquest\fP(6).
+.PP
+The object of the game is twofold.  The short-range goal is to
+accumulate "kills" by shooting down enemy players.  The long-range
+goal is to conquer the universe for your team by taking every
+\fIcore\fP planet.  You take planets by killing off the enemy's armies
+via bombardment, and then beaming your team's armies down.
+.PP
+Your options and log file are kept in ~/.conquest/, or in the
+directory named by the \fICONQUEST_USERDIR\fP environment variable.
+.PP
+Inside the game, type \fBh\fP for a list of commands.
+.SH "OPTIONS"
+.PP
+If neither \fI\-s\fP nor \fI\-m\fP is given, the client connects to
+a server on your own host at port 1701.
+.TP 8
+.B \-s <server[:port]>
+Connect to the server running on \fIserver\fP port \fIport\fP.  The
+default port is 1701.
+.TP 8
+.B \-m
+Query the metaserver and provide a list of servers to choose from.
+.TP 8
+.B \-M <metaserver>
+Specify an alternate metaserver.
+.TP 8
+.B \-u
+Do not attempt to use UDP for the motion data from the server.
+.TP 8
+.B \-v
+Be more verbose in the log file.  More \-v's increase verbosity.
+.SH "SEE ALSO"
+.PP
+conquest(6), conquestd(6), conqoper(6), conqdriv(6), conqmetad(6)
+.SH AUTHOR
+Jon Trulson
+.SH COPYRIGHT
+.PP
+Copyright (C) 1994-2018 by Jon Trulson <jon@radscan.com> under the
+MIT License.
+.PP
+Original VAX/VMS Ratfor Conquest:
+.PP
+Copyright (C) 1983 by Jef Poskanzer and Craig Leres.
