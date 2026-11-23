@@ -76,6 +76,7 @@ void     utStrncat( char *to, const char *from, unsigned int tosize );
 bool     utStringMatch(const std::string& str1, const std::string& str2,
                        bool casesensitive );
 char     *utGetPath(const char *thepath);
+std::string utGetUserConfDir(void);
 void     utSleep(real seconds);
 bool     utIsDigits(const std::string& str);
 void     utToUpperCase(char *buf);

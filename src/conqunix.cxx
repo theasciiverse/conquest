@@ -75,6 +75,16 @@ int getUID(char *name)
 }
 
 
+/* A private universe is one whose state directory was relocated with
+ * CONQUEST_STATE (see utGetPath()).  It belongs to the user running
+ * it, so no conquest group is needed and that user is its operator. */
+static bool isPrivateUniverse(void)
+{
+    const char *env = getenv("CONQUEST_STATE");
+
+    return (env && *env);
+}
+
 /* int getConquestGID(void) - return conquest's Group ID */
 int getConquestGID(void)
 {
@@ -82,6 +92,9 @@ int getConquestGID(void)
     return 0;
 #else
     struct group *conq_grp;
+
+    if (isPrivateUniverse())
+        return getgid();
 
     if ((conq_grp = getgrnam(CONQUEST_GROUP)) == NULL)
     {
@@ -257,7 +270,8 @@ void drcreate(void)
         /* close all file descriptors */
         for (int i=0; i < FOPEN_MAX; i++)
             close(i);
-        sprintf(drivcmd, "%s/%s", CONQLIBEXEC, C_CONQ_CONQDRIV);
+        snprintf(drivcmd, PATH_MAX, "%s/%s", utGetPath(CONQLIBEXEC),
+                 C_CONQ_CONQDRIV);
         // we need to pass the -G option here if a game subdir is set
         if (gameSubdirectory.get().size())
             execl(drivcmd, drivcmd, "-G", gameSubdirectory.get().c_str(),
@@ -430,6 +444,10 @@ int isagod( int unum )
 
     /* root is always god */
     if (geteuid() == (uid_t)0)
+        return true;
+
+    /* and so is the owner of a private universe */
+    if (isPrivateUniverse())
         return true;
 
     // If your group name matches the conquest group name, you are a god

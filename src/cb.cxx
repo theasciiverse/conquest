@@ -251,7 +251,7 @@ static int _checkCB(char *fname, int fmode, int sizeofcb)
             // we create a new file tagged with the unix time
             char newfile[PATH_MAX] = {};
             snprintf(newfile, PATH_MAX, "%s/%s-%lu",
-                     CONQSTATE, C_CONQ_COMMONBLK,
+                     utGetPath(CONQSTATE), C_CONQ_COMMONBLK,
                      time(0));
 
             utLog("%s: %s: ERROR: File size mismatch (expected %d, was %ld), "
@@ -368,7 +368,7 @@ void cbMap(void)
     utLog("%s: CB size: %u bytes", __FUNCTION__,
           cbGetSize());
 
-    snprintf(cmnfile, PATH_MAX, "%s/%s/%s", CONQSTATE,
+    snprintf(cmnfile, PATH_MAX, "%s/%s/%s", utGetPath(CONQSTATE),
              gameSubdirectory.get().c_str(),
              C_CONQ_COMMONBLK);
 

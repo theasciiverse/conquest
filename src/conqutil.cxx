@@ -377,7 +377,6 @@ void utLog(const char *fmt, ...)
     static char buf[BUFFER_SIZE_256] = {};
     static char errfile[PATH_MAX] = {};
     static FILE *errfd = NULL;
-    char *homevar;
     int tmp;
 
     va_start(ap, fmt);
@@ -391,7 +390,7 @@ void utLog(const char *fmt, ...)
         if (systemlog)
 	{
             umask(007);
-            snprintf(errfile, PATH_MAX, "%s/%s/%s", CONQSTATE,
+            snprintf(errfile, PATH_MAX, "%s/%s/%s", utGetPath(CONQSTATE),
                      gameSubdirectory.get().c_str(), C_CONQ_ERRLOG);
             if (ConquestGID == ERR)
 	    {
@@ -401,10 +400,11 @@ void utLog(const char *fmt, ...)
 	}
         else
 	{			/* local logfile */
-            if ((homevar = getenv(CQ_USERHOMEDIR)) != NULL)
+            std::string udir = utGetUserConfDir();
+            if (!udir.empty())
             {
-                snprintf(errfile, PATH_MAX, "%s/%s/%s",
-                         homevar, CQ_USERCONFDIR, C_CONQ_ERRLOG);
+                snprintf(errfile, PATH_MAX, "%s/%s",
+                         udir.c_str(), C_CONQ_ERRLOG);
             }
             else
                 snprintf(errfile, PATH_MAX, "%s", C_CONQ_ERRLOG);
@@ -997,10 +997,28 @@ char *utGetPath(const char *thepath)
     static char retpath[PATH_MAX];
 
 #if !defined(MINGW)
-    /* the non-windows case just returns thepath, but we copy it
-     * to avoid an annoying compiler warning regarding const.
+    /* the non-windows case just returns thepath, unless an
+     * environment variable relocates it (CONQUEST_ETC,
+     * CONQUEST_STATE, CONQUEST_LIBEXEC or CONQUEST_SHARE).  This lets
+     * a user run a private universe out of their own directories.  We
+     * copy thepath to avoid an annoying compiler warning regarding
+     * const.
      */
-    utStrncpy(retpath, thepath, PATH_MAX);
+    const char *env = NULL;
+
+    if (!strcmp(thepath, CONQETC))
+        env = getenv("CONQUEST_ETC");
+    else if (!strcmp(thepath, CONQSTATE))
+        env = getenv("CONQUEST_STATE");
+    else if (!strcmp(thepath, CONQLIBEXEC))
+        env = getenv("CONQUEST_LIBEXEC");
+    else if (!strcmp(thepath, CONQSHARE))
+        env = getenv("CONQUEST_SHARE");
+
+    if (env && *env)
+        utStrncpy(retpath, env, PATH_MAX);
+    else
+        utStrncpy(retpath, thepath, PATH_MAX);
     return retpath;
 #else
 
@@ -1085,4 +1103,20 @@ void utAppendChar(char *buf, char ch)
     int len = strlen(buf);
     buf[len++] = ch;
     buf[len] = 0;
+}
+
+/* the user's own Conquest directory (config, logs): $CONQUEST_USERDIR
+ * if that is set, otherwise ~/.conquest (%APPDATA%/Conquest on
+ * windows).  Returns an empty string if neither can be determined. */
+std::string utGetUserConfDir(void)
+{
+    const char *dir = getenv("CONQUEST_USERDIR");
+
+    if (dir && *dir)
+        return std::string(dir);
+
+    if (!(dir = getenv(CQ_USERHOMEDIR)))
+        return std::string();
+
+    return std::string(dir) + "/" + CQ_USERCONFDIR;
 }

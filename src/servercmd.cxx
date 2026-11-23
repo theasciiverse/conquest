@@ -70,7 +70,7 @@ void startRecord(int f)
 
     snprintf(bname, PATH_MAX, "conquest-rec-%s.cqr", tbuf);
 
-    snprintf(fname, PATH_MAX, "%s/%s", CONQSTATE, bname);
+    snprintf(fname, PATH_MAX, "%s/%s", utGetPath(CONQSTATE), bname);
 
     if (recOpenOutput(fname, true))
     {                     /* we are almost ready... */

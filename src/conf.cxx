@@ -134,9 +134,9 @@ static void checkCreateUserConfDir(void)
 {
     char buffer[PATH_MAX];
     struct stat sbuf;
-    char *home;
+    std::string udir = utGetUserConfDir();
 
-    if ((home = getenv(CQ_USERHOMEDIR)) == NULL)
+    if (udir.empty())
     {
         utLog("checkCreateUserConfDir(): getenv(%s) failed", CQ_USERHOMEDIR);
 
@@ -144,7 +144,7 @@ static void checkCreateUserConfDir(void)
     }
 
     /* start building the filename */
-    snprintf(buffer, PATH_MAX, "%s/%s", home, CQ_USERCONFDIR);
+    snprintf(buffer, PATH_MAX, "%s", udir.c_str());
 
     if (stat(buffer, &sbuf) >= 0)
     {
@@ -481,7 +481,7 @@ int GetConf(int usernum)
     FILE *conf_fd;
     int i, j, n;
     char conf_name[PATH_MAX] = {};
-    char *homevar, *cptr;
+    char *cptr;
     char buffer[BUFFER_SIZE_256];
     int buflen;
     char *bufptr;
@@ -494,7 +494,8 @@ int GetConf(int usernum)
     checkCreateUserConfDir();
 
     /* start building the filename */
-    if ((homevar = getenv(CQ_USERHOMEDIR)) == NULL)
+    std::string udir = utGetUserConfDir();
+    if (udir.empty())
     {
         utLog("GetConf(): getenv(%s) failed", CQ_USERHOMEDIR);
 
@@ -503,8 +504,8 @@ int GetConf(int usernum)
         return(-1);
     }
 
-    snprintf(conf_name, PATH_MAX, "%s/%s/%s",
-             homevar, CQ_USERCONFDIR, CONFIG_FILE);
+    snprintf(conf_name, PATH_MAX, "%s/%s",
+             udir.c_str(), CONFIG_FILE);
 
     if ((conf_fd = fopen(conf_name, "r")) == NULL)
     {
@@ -758,10 +759,10 @@ int GetConf(int usernum)
 int SaveUserConfig(void)
 {
     char conf_name[PATH_MAX] = {};
-    char *homevar;
 
     /* start building the filename */
-    if ((homevar = getenv(CQ_USERHOMEDIR)) == NULL)
+    std::string udir = utGetUserConfDir();
+    if (udir.empty())
     {
         utLog("SaveUserConfig(): getenv(%s) failed", CQ_USERHOMEDIR);
 
@@ -771,8 +772,8 @@ int SaveUserConfig(void)
         return(-1);
     }
 
-    snprintf(conf_name, PATH_MAX, "%s/%s/%s",
-             homevar, CQ_USERCONFDIR, CONFIG_FILE);
+    snprintf(conf_name, PATH_MAX, "%s/%s",
+             udir.c_str(), CONFIG_FILE);
 
 #ifdef DEBUG_OPTIONS
     utLog("SaveUserConfig(): saving user config: conf_name = '%s'", conf_name);
