@@ -185,6 +185,39 @@ void ioeat(void)
 
 }
 
+/* An optional idle function, called about every iolbIdleInterval
+ * seconds while iogchar() or iogtimed() wait for a key.  A curses
+ * client uses it to read packets from the server and update the
+ * display while a prompt waits for input.
+ */
+static void (*iolbIdleFunc)(void) = NULL;
+static real iolbIdleInterval = 0.1;
+static bool iolbInIdle = false;
+
+void iolbSetIdleFunc(void (*func)(void), real interval)
+{
+    iolbIdleFunc = func;
+    if (interval > 0.0)
+        iolbIdleInterval = interval;
+
+    return;
+}
+
+static void _callIdleFunc(void)
+{
+    /* never recurse, the idle function may prompt as well */
+    if (!iolbIdleFunc || iolbInIdle)
+        return;
+
+    iolbInIdle = true;
+    (*iolbIdleFunc)();
+    iolbInIdle = false;
+
+    return;
+}
+
+static int _iogtimed ( int *ch, real seconds );
+
 /*  iogchar - get a character */
 /*  SYNOPSIS */
 /*    char ch, iogchar */
@@ -198,6 +231,18 @@ int iogchar ( void )
     /*  check for terminal broadcasts. */
 
     cdrefresh();
+
+    if (iolbIdleFunc && !iolbInIdle)
+    {
+        int c;
+
+        while (!ibufCount())
+        {
+            if (_iogtimed(&c, iolbIdleInterval))
+                return c;
+            _callIdleFunc();
+        }
+    }
 
     timeout(-1);			/* wait for a while */
 
@@ -235,7 +280,7 @@ reloop:
 /*    int seconds */
 /*    gotone = iogtimed ( &ch, seconds ) */
 
-int iogtimed ( int *ch, real seconds )
+static int _iogtimed ( int *ch, real seconds )
 {
     static int c;
     unsigned int secs, usecs;
@@ -403,4 +448,26 @@ int iogtimed ( int *ch, real seconds )
 
     } /* while */
 
+}
+
+/*  iogtimed - get a char with timeout, calling the idle function (if
+ *  any) while waiting */
+int iogtimed ( int *ch, real seconds )
+{
+    if (!iolbIdleFunc || iolbInIdle)
+        return _iogtimed(ch, seconds);
+
+    while (seconds > 0.0)
+    {
+        real slice = (seconds < iolbIdleInterval) ? seconds : iolbIdleInterval;
+
+        if (_iogtimed(ch, slice))
+            return true;
+
+        _callIdleFunc();
+        seconds -= slice;
+    }
+
+    *ch = 0;
+    return false;
 }

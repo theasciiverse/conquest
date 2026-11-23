@@ -39,5 +39,6 @@ int  iochav( void );
 int  iogchar ( void );
 int  iogtimed ( int *ch, real seconds );
 void ioeat(void);
+void iolbSetIdleFunc(void (*func)(void), real interval);
 
 #endif /* _IOLB_H */
